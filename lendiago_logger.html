@@ -308,6 +308,178 @@ body::before {
 }
 .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
 
+
+/* ════════════════════
+   SWIPE TO DELETE
+════════════════════ */
+.swipe-wrap {
+  position:relative; overflow:hidden;
+  border-radius:18px; margin-bottom:10px;
+}
+.swipe-bg {
+  position:absolute; inset:0;
+  background:linear-gradient(90deg, transparent 0%, rgba(255,77,106,0.15) 40%, rgba(255,77,106,0.25) 100%);
+  border-radius:18px;
+  display:flex; align-items:center; justify-content:flex-end;
+  padding-right:24px;
+  pointer-events:none;
+}
+.swipe-trash {
+  width:44px; height:44px; border-radius:13px;
+  background:var(--red-dim); border:1px solid rgba(255,77,106,0.3);
+  display:flex; align-items:center; justify-content:center;
+  font-size:20px; color:var(--red);
+  transform:scale(0.7); opacity:0;
+  transition:transform .25s cubic-bezier(.2,.8,.4,1), opacity .25s;
+  pointer-events:all; cursor:pointer;
+}
+.swipe-wrap.swiping .swipe-trash {
+  transform:scale(1); opacity:1;
+}
+.swipe-front {
+  position:relative; z-index:1;
+  transition:transform .3s cubic-bezier(.2,.8,.4,1);
+  will-change:transform;
+}
+.swipe-front.animating {
+  transition:transform .25s cubic-bezier(.2,.8,.4,1);
+}
+
+/* ════════════════════
+   CONFIRM DIALOG
+════════════════════ */
+.dialog-overlay {
+  position:fixed; inset:0; z-index:500;
+  background:rgba(4,2,10,0.85);
+  backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px);
+  display:none; align-items:center; justify-content:center;
+  padding:24px;
+}
+.dialog-overlay.open { display:flex; }
+.dialog-box {
+  background:var(--layer2);
+  border:1px solid var(--border2);
+  border-radius:24px;
+  padding:28px 24px 20px;
+  width:100%; max-width:340px;
+  animation:dialogPop .28s cubic-bezier(.2,.8,.4,1);
+}
+@keyframes dialogPop {
+  from { opacity:0; transform:scale(0.88) translateY(20px); }
+  to   { opacity:1; transform:scale(1) translateY(0); }
+}
+.dialog-icon {
+  width:56px; height:56px; border-radius:18px;
+  background:var(--red-dim); border:1px solid rgba(255,77,106,0.2);
+  display:flex; align-items:center; justify-content:center;
+  font-size:26px; margin:0 auto 18px;
+}
+.dialog-title {
+  font-size:18px; font-weight:800; color:var(--white);
+  text-align:center; letter-spacing:-0.4px; margin-bottom:8px;
+}
+.dialog-sub {
+  font-size:13px; color:var(--t2); text-align:center;
+  line-height:1.6; margin-bottom:22px;
+}
+.dialog-entry-preview {
+  background:var(--layer3); border:1px solid var(--border);
+  border-radius:14px; padding:14px 16px;
+  margin-bottom:20px;
+  display:flex; align-items:center; justify-content:space-between;
+}
+.dialog-entry-note { font-size:13px; font-weight:600; color:var(--t1); max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.dialog-entry-amt  { font-size:15px; font-weight:800; }
+.dialog-entry-amt.in  { color:var(--green); }
+.dialog-entry-amt.out { color:var(--red); }
+.dialog-btns { display:flex; flex-direction:column; gap:10px; }
+.dialog-delete-btn {
+  width:100%; padding:16px; border-radius:14px; border:none;
+  background:var(--red); color:#fff;
+  font-family:'Inter',sans-serif; font-size:15px; font-weight:700;
+  cursor:pointer; transition:opacity .15s;
+}
+.dialog-delete-btn:active { opacity:0.85; }
+.dialog-cancel-btn {
+  width:100%; padding:14px; border-radius:14px;
+  border:1.5px solid var(--border2); background:none;
+  color:var(--t2); font-family:'Inter',sans-serif;
+  font-size:14px; font-weight:600; cursor:pointer;
+}
+
+/* ════════════════════
+   UNDO TOAST
+════════════════════ */
+.undo-bar {
+  position:fixed; bottom:108px; left:50%;
+  transform:translateX(-50%) translateY(20px);
+  background:var(--layer3); border:1px solid var(--border2);
+  border-radius:100px; padding:12px 8px 12px 20px;
+  display:flex; align-items:center; gap:12px;
+  font-size:13px; font-weight:600; color:var(--t1);
+  opacity:0; transition:all .3s cubic-bezier(.2,.8,.4,1);
+  z-index:400; white-space:nowrap;
+  box-shadow:0 8px 32px rgba(0,0,0,0.5);
+  pointer-events:none;
+}
+.undo-bar.show {
+  opacity:1; transform:translateX(-50%) translateY(0);
+  pointer-events:all;
+}
+.undo-btn {
+  background:var(--accent); color:#fff;
+  border:none; border-radius:100px;
+  padding:7px 16px; font-size:12px; font-weight:700;
+  cursor:pointer; font-family:'Inter',sans-serif;
+  transition:opacity .15s;
+}
+.undo-btn:active { opacity:0.8; }
+
+/* ════════════════════
+   HISTORY SHEET
+════════════════════ */
+.hist-overlay {
+  position:fixed; inset:0; z-index:100;
+  background:rgba(4,2,10,0.8);
+  backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+  display:none; align-items:flex-end; justify-content:center;
+}
+.hist-overlay.open { display:flex; }
+.hist-sheet {
+  background:var(--bg2);
+  border-radius:28px 28px 0 0;
+  border-top:1px solid rgba(124,58,237,0.2);
+  width:100%; max-width:430px;
+  max-height:90vh; overflow-y:auto;
+  animation:shUp .32s cubic-bezier(.32,.72,0,1);
+  padding-bottom:44px;
+}
+.hist-head {
+  position:sticky; top:0; background:var(--bg2); z-index:2;
+  padding:14px 24px 16px; border-bottom:1px solid var(--border);
+}
+.hist-drag { display:flex; justify-content:center; padding:0 0 14px; }
+.hist-handle { width:38px; height:4px; border-radius:100px; background:var(--layer4); }
+.hist-title { font-size:22px; font-weight:800; color:var(--white); letter-spacing:-0.5px; }
+.hist-body { padding:16px 20px; }
+
+.hist-item {
+  display:flex; align-items:flex-start; gap:12px;
+  padding:12px 0; border-bottom:1px solid var(--border);
+}
+.hist-item:last-child { border-bottom:none; }
+.hist-dot {
+  width:8px; height:8px; border-radius:50%; flex-shrink:0; margin-top:5px;
+}
+.hist-dot.add   { background:var(--green); }
+.hist-dot.del   { background:var(--red); }
+.hist-dot.sync  { background:var(--gold); }
+.hist-text { flex:1; min-width:0; }
+.hist-action { font-size:13px; font-weight:600; color:var(--t1); margin-bottom:2px; }
+.hist-detail { font-size:11px; color:var(--t3); line-height:1.4; }
+.hist-time { font-size:10px; color:var(--t3); flex-shrink:0; margin-top:3px; }
+.hist-empty { text-align:center; padding:48px 24px; color:var(--t3); font-size:14px; }
+
 /* ════════════════════
    FAB
 ════════════════════ */
@@ -526,6 +698,10 @@ input[type="number"]::placeholder { color:var(--t3); }
       <div class="brand-name">Lendi<em>ago</em></div>
       <div class="brand-sub">Capital Solutions LLC</div>
     </div>
+    <button class="sync-pill" onclick="openHistory()" id="histBtn" style="gap:6px;padding:8px 14px;">
+      <span style="font-size:14px;">🕐</span>
+      <span style="font-size:12px;font-weight:600;color:var(--t2);">History</span>
+    </button>
     <button class="sync-pill" onclick="syncSheet()" id="syncBtn">
       <div class="dot" id="syncDot"></div>
       <span id="syncTxt">Sync</span>
@@ -690,7 +866,7 @@ async function syncSheet(){
           const type=raw.includes('in')&&!raw.includes('out')?'Money in':'Money out';
           return{type,date:r[1],note:r[2]||'',amount:parseFloat(r[3])||0};
         });
-      flush(); render(); showToast('✓ Synced from Google Sheets');
+      flush(); render(); showToast('✓ Synced from Google Sheets'); addHistory('synced', `Pulled ${rows.length} entries from Google Sheets`);
       setSyncState('ok');
     }
   }catch(e){ setSyncState('err'); showToast('Sync failed — check Script URL'); }
@@ -713,11 +889,157 @@ async function deleteRow(idx){
   }catch{ return false; }
 }
 
-// ── RENDER ──
-function toggleCard(el){
-  el.classList.toggle('expanded');
+// ── HISTORY LOG ──
+let histLog = JSON.parse(localStorage.getItem('lcs_hist') || '[]');
+function addHistory(action, detail){
+  histLog.unshift({ action, detail, time: new Date().toISOString() });
+  if(histLog.length > 200) histLog = histLog.slice(0, 200);
+  localStorage.setItem('lcs_hist', JSON.stringify(histLog));
+}
+function fmtTime(iso){
+  const d = new Date(iso);
+  const now = new Date();
+  const diff = Math.floor((now - d) / 1000);
+  if(diff < 60) return 'Just now';
+  if(diff < 3600) return Math.floor(diff/60) + 'm ago';
+  if(diff < 86400) return Math.floor(diff/3600) + 'h ago';
+  return d.toLocaleDateString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
+}
+function openHistory(){
+  const body = document.getElementById('histBody');
+  if(!histLog.length){
+    body.innerHTML = '<div class="hist-empty">No activity yet.<br>Your actions will appear here.</div>';
+  } else {
+    body.innerHTML = histLog.map(h => {
+      const dotCls = h.action==='added'?'add':h.action==='deleted'?'del':'sync';
+      return `<div class="hist-item">
+        <div class="hist-dot ${dotCls}"></div>
+        <div class="hist-text">
+          <div class="hist-action">${h.action==='added'?'Added':h.action==='deleted'?'Deleted':h.action==='undone'?'Undone (restored)':h.action==='synced'?'Synced from Sheet':'Activity'}</div>
+          <div class="hist-detail">${h.detail||''}</div>
+        </div>
+        <div class="hist-time">${fmtTime(h.time)}</div>
+      </div>`;
+    }).join('');
+  }
+  document.getElementById('histOverlay').classList.add('open');
+}
+function closeHistory(){ document.getElementById('histOverlay').classList.remove('open'); }
+function bgHistClick(e){ if(e.target===document.getElementById('histOverlay')) closeHistory(); }
+
+// ── UNDO STATE ──
+let undoStack = null;
+let undoTimer = null;
+
+function showUndo(msg){
+  clearTimeout(undoTimer);
+  document.getElementById('undoMsg').textContent = msg;
+  document.getElementById('undoBar').classList.add('show');
+  undoTimer = setTimeout(()=>{
+    document.getElementById('undoBar').classList.remove('show');
+    undoStack = null;
+  }, 5000);
+}
+function hideUndo(){
+  clearTimeout(undoTimer);
+  document.getElementById('undoBar').classList.remove('show');
+}
+async function undoDelete(){
+  if(!undoStack) return;
+  const { row, idx } = undoStack;
+  rows.splice(idx, 0, row);
+  flush(); render(); hideUndo();
+  addHistory('undone', `Restored: ${row.note?row.note.split('|||')[0]:'entry'} — ${$m(row.amount)}`);
+  showToast('✓ Transaction restored');
+  if(SCRIPT_URL){ await writeRow(row); }
 }
 
+// ── CONFIRM DIALOG ──
+let pendingDeleteIdx = null;
+function openDeleteDialog(idx){
+  pendingDeleteIdx = idx;
+  const r = [...rows].reverse()[idx];
+  const realIdx = rows.length - 1 - idx;
+  const isIn = r.type === 'Money in';
+  const note = r.note ? r.note.split('|||')[0] : '—';
+  document.getElementById('dialogNote').textContent = note;
+  const amtEl = document.getElementById('dialogAmt');
+  amtEl.textContent = (isIn?'+':'-') + $m(r.amount);
+  amtEl.className = 'dialog-entry-amt ' + (isIn?'in':'out');
+  document.getElementById('dialogOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeDialog(){
+  document.getElementById('dialogOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+  pendingDeleteIdx = null;
+}
+async function confirmDelete(){
+  if(pendingDeleteIdx === null) return;
+  const reversedIdx = pendingDeleteIdx;
+  const realIdx = rows.length - 1 - reversedIdx;
+  const row = rows[realIdx];
+  undoStack = { row: {...row}, idx: realIdx };
+  addHistory('deleted', `${row.type} — ${$m(row.amount)} — ${row.note?row.note.split('|||')[0]:''}`);
+  rows.splice(realIdx, 1);
+  flush(); render(); closeDialog();
+  showUndo(`Deleted: ${row.note?row.note.split('|||')[0].slice(0,28):'entry'}`);
+  if(SCRIPT_URL){ await deleteRow(realIdx); }
+}
+
+// ── SWIPE TO DELETE ──
+function initSwipe(wrap){
+  const front = wrap.querySelector('.swipe-front');
+  const trash = wrap.querySelector('.swipe-trash');
+  let startX=0, curX=0, dragging=false, didSwipe=false;
+  const MAX_SWIPE = 80;
+
+  function onStart(e){
+    const t = e.touches ? e.touches[0] : e;
+    startX = t.clientX; curX = 0; dragging = true; didSwipe = false;
+    front.classList.remove('animating');
+  }
+  function onMove(e){
+    if(!dragging) return;
+    const t = e.touches ? e.touches[0] : e;
+    curX = Math.min(0, t.clientX - startX);
+    if(curX < -8) e.preventDefault();
+    const pct = Math.min(1, Math.abs(curX) / MAX_SWIPE);
+    front.style.transform = `translateX(${curX}px)`;
+    if(Math.abs(curX) > 30){
+      wrap.classList.add('swiping');
+      didSwipe = true;
+    } else {
+      wrap.classList.remove('swiping');
+    }
+  }
+  function onEnd(){
+    if(!dragging) return; dragging = false;
+    front.classList.add('animating');
+    if(Math.abs(curX) > MAX_SWIPE * 0.6){
+      front.style.transform = `translateX(-${MAX_SWIPE}px)`;
+      wrap.classList.add('swiping');
+    } else {
+      front.style.transform = 'translateX(0)';
+      wrap.classList.remove('swiping');
+    }
+    setTimeout(()=>{ if(didSwipe) didSwipe=false; }, 100);
+  }
+  front.addEventListener('touchstart', onStart, {passive:true});
+  front.addEventListener('touchmove', onMove, {passive:false});
+  front.addEventListener('touchend', onEnd);
+
+  trash.addEventListener('click', (e)=>{
+    e.stopPropagation();
+    front.classList.add('animating');
+    front.style.transform = 'translateX(0)';
+    wrap.classList.remove('swiping');
+    const idx = parseInt(wrap.dataset.idx);
+    openDeleteDialog(idx);
+  });
+}
+
+// ── RENDER ──
 function render(){
   const now=new Date();
   document.getElementById('dateLg').textContent=now.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
@@ -734,7 +1056,7 @@ function render(){
 
   const list=document.getElementById('list');
   if(!rows.length){
-    list.innerHTML=`<div class="empty"><span class="empty-glyph">💳</span><div class="empty-h">No transactions yet</div><div class="empty-p">Tap the + button to log your first entry.<br>It syncs directly to Google Sheets.</div></div>`;
+    list.innerHTML=`<div class="empty"><span class="empty-glyph">💳</span><div class="empty-h">No transactions yet</div><div class="empty-p">Tap + to log your first entry.<br>Swipe left on any card to delete.</div></div>`;
     return;
   }
 
@@ -744,37 +1066,36 @@ function render(){
     const notes=r.note?(r.note.split('|||')):([]); 
     const preview=notes[0]||'—';
     const extras=notes.slice(1);
-    const realIdx=rows.length-1-i;
     return `
-    <div class="entry ${cls}" style="animation-delay:${i*0.045}s" onclick="toggleCard(this)">
-      <div class="e-line"></div>
-      <div class="e-main">
-        <div class="e-type-box">
-          <div class="e-type-arrow">${isIn?'↑':'↓'}</div>
-          <div class="e-type-word">${isIn?'IN':'OUT'}</div>
-        </div>
-        <div class="e-info">
-          <div class="e-note-preview">${preview}</div>
-          <div class="e-date">${fmtD(r.date)}</div>
-        </div>
-        <div class="e-right">
-          <div class="e-amount">${isIn?'+':'-'}${$m(r.amount)}</div>
-          <div class="e-tag">${isIn?'Income':'Expense'}</div>
-        </div>
+    <div class="swipe-wrap" data-idx="${i}">
+      <div class="swipe-bg">
+        <div class="swipe-trash">🗑</div>
       </div>
-      ${extras.length?`<div class="e-extra-notes">${extras.map(n=>`<div class="e-note-item">${n}</div>`).join('')}</div>`:''}
-      <div class="e-foot e-foot-hidden">
-        <button class="del" onclick="event.stopPropagation();doDelete(${realIdx})">Delete</button>
+      <div class="swipe-front">
+        <div class="entry ${cls}" style="animation-delay:${i*0.045}s;margin-bottom:0;border-radius:18px;">
+          <div class="e-line"></div>
+          <div class="e-main">
+            <div class="e-type-box">
+              <div class="e-type-arrow">${isIn?'↑':'↓'}</div>
+              <div class="e-type-word">${isIn?'IN':'OUT'}</div>
+            </div>
+            <div class="e-info">
+              <div class="e-note-preview">${preview}</div>
+              <div class="e-date">${fmtD(r.date)}</div>
+            </div>
+            <div class="e-right">
+              <div class="e-amount">${isIn?'+':'-'}${$m(r.amount)}</div>
+              <div class="e-tag">${isIn?'Income':'Expense'}</div>
+            </div>
+          </div>
+          ${extras.length?`<div class="e-extra-notes">${extras.map(n=>`<div class="e-note-item">${n}</div>`).join('')}</div>`:''}
+        </div>
       </div>
     </div>`;
   }).join('');
-}
 
-async function doDelete(idx){
-  if(!confirm('Delete this transaction?')) return;
-  rows.splice(idx,1); flush(); render();
-  if(SCRIPT_URL){ const ok=await deleteRow(idx); showToast(ok?'Deleted from Google Sheet':'Deleted locally'); }
-  else showToast('Deleted locally');
+  // Attach swipe handlers
+  document.querySelectorAll('.swipe-wrap').forEach(wrap => initSwipe(wrap));
 }
 
 // ── SHEET STATE ──
@@ -852,6 +1173,7 @@ async function doSave(){
   const lbl=document.getElementById('saveLbl');
   btn.disabled=true; spn.style.display='block'; lbl.textContent='Saving…';
 
+  addHistory('added', `${typeStr} — ${$m(a)} — ${notes[0]||''}`);
   if(SCRIPT_URL){
     const ok=await writeRow(row);
     btn.disabled=false; spn.style.display='none'; lbl.textContent='Save to Google Sheet';
@@ -867,5 +1189,40 @@ async function doSave(){
 render();
 if(SCRIPT_URL) syncSheet();
 </script>
+
+<!-- ── CONFIRM DELETE DIALOG ── -->
+<div class="dialog-overlay" id="dialogOverlay">
+  <div class="dialog-box">
+    <div class="dialog-icon">🗑</div>
+    <div class="dialog-title">Delete Transaction?</div>
+    <div class="dialog-sub">This will remove the entry from your records and Google Sheet.</div>
+    <div class="dialog-entry-preview" id="dialogPreview">
+      <div class="dialog-entry-note" id="dialogNote">—</div>
+      <div class="dialog-entry-amt" id="dialogAmt">$0.00</div>
+    </div>
+    <div class="dialog-btns">
+      <button class="dialog-delete-btn" onclick="confirmDelete()">Yes, Delete It</button>
+      <button class="dialog-cancel-btn" onclick="closeDialog()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── UNDO BAR ── -->
+<div class="undo-bar" id="undoBar">
+  <span id="undoMsg">Transaction deleted</span>
+  <button class="undo-btn" onclick="undoDelete()">Undo</button>
+</div>
+
+<!-- ── HISTORY SHEET ── -->
+<div class="hist-overlay" id="histOverlay" onclick="bgHistClick(event)">
+  <div class="hist-sheet">
+    <div class="hist-head">
+      <div class="hist-drag"><div class="hist-handle"></div></div>
+      <div class="hist-title">Activity History</div>
+    </div>
+    <div class="hist-body" id="histBody"></div>
+  </div>
+</div>
+
 </body>
 </html>
