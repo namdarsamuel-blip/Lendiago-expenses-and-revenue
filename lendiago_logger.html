@@ -169,7 +169,8 @@ body::before {
 }
 .t-arrow { font-size:11px; }
 .t-value {
-  font-size:19px; font-weight:800; letter-spacing:-0.5px; line-height:1;
+  font-size:17px; font-weight:800; letter-spacing:-0.3px; line-height:1;
+  word-break:break-all;
 }
 .t-value.in  { color:var(--green); }
 .t-value.out { color:var(--red); }
@@ -827,6 +828,12 @@ function uid()   { return Date.now().toString(36)+Math.random().toString(36).sli
 function today() { return new Date().toISOString().split('T')[0]; }
 function yest()  { const d=new Date();d.setDate(d.getDate()-1);return d.toISOString().split('T')[0]; }
 function $m(n)   { return '$'+Number(n||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function $compact(n){ 
+  const v=Number(n||0);
+  if(v>=1000000) return '$'+(v/1000000).toFixed(1).replace(/\.0$/,'')+'M';
+  if(v>=10000)   return '$'+(v/1000).toFixed(1).replace(/\.0$/,'')+'K';
+  return '$'+v.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0});
+}
 function fmtD(s) {
   try {
     const d=new Date(s.includes('-')?s:s.replace(/(\d+)\/(\d+)\/(\d+)/,'$3-$1-$2'));
@@ -866,7 +873,21 @@ async function syncSheet(){
           const type=raw.includes('in')&&!raw.includes('out')?'Money in':'Money out';
           return{type,date:r[1],note:r[2]||'',amount:parseFloat(r[3])||0};
         });
-      flush(); render(); showToast('✓ Synced from Google Sheets'); addHistory('synced', `Pulled ${rows.length} entries from Google Sheets`);
+      flush(); render();
+      // Also pull history log from sheet
+      if(data.history && data.history.length){
+        // Merge sheet history with local — sheet is source of truth
+        const sheetHist = data.history.map(h=>({
+          action: h[0]||'', detail: h[1]||'', time: h[2]||''
+        }));
+        // Merge: keep local entries not in sheet (very recent), plus all sheet entries
+        const sheetTimes = new Set(sheetHist.map(h=>h.time));
+        const localOnly = histLog.filter(h=>!sheetTimes.has(h.time));
+        histLog = [...localOnly, ...sheetHist].sort((a,b)=>b.time.localeCompare(a.time)).slice(0,200);
+        localStorage.setItem('lcs_hist', JSON.stringify(histLog));
+      }
+      showToast('✓ Synced from Google Sheets');
+      addHistory('synced', `Pulled ${rows.length} transactions from Google Sheets`);
       setSyncState('ok');
     }
   }catch(e){ setSyncState('err'); showToast('Sync failed — check Script URL'); }
@@ -892,9 +913,22 @@ async function deleteRow(idx){
 // ── HISTORY LOG ──
 let histLog = JSON.parse(localStorage.getItem('lcs_hist') || '[]');
 function addHistory(action, detail){
-  histLog.unshift({ action, detail, time: new Date().toISOString() });
+  const entry = { action, detail, time: new Date().toISOString() };
+  histLog.unshift(entry);
   if(histLog.length > 200) histLog = histLog.slice(0, 200);
   localStorage.setItem('lcs_hist', JSON.stringify(histLog));
+  // Write to Google Sheet history tab
+  if(SCRIPT_URL){
+    fetch(SCRIPT_URL, {
+      method:'POST',
+      body: JSON.stringify({
+        action: 'log_history',
+        histAction: action,
+        detail: detail,
+        time: entry.time
+      })
+    }).catch(()=>{});
+  }
 }
 function fmtTime(iso){
   const d = new Date(iso);
@@ -1048,9 +1082,9 @@ function render(){
   const outAmt = rows.filter(r=>r.type==='Money out').reduce((s,r)=>s+r.amount,0);
   const net    = inAmt-outAmt;
 
-  document.getElementById('tIn').textContent  = $m(inAmt);
-  document.getElementById('tOut').textContent = $m(outAmt);
-  document.getElementById('tNet').textContent = $m(Math.abs(net));
+  document.getElementById('tIn').textContent  = $compact(inAmt);
+  document.getElementById('tOut').textContent = $compact(outAmt);
+  document.getElementById('tNet').textContent = $compact(Math.abs(net));
   document.getElementById('tNet').style.color = net>=0?'var(--gold)':'var(--red)';
   document.getElementById('cnt').textContent  = rows.length+' entries';
 
